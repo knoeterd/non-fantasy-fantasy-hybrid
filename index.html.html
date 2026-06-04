@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tuimiz Style Chimera Generator</title>
+<style>
+:root{
+  --bg:#eadcf3;--card:#ffffff;--label:#fff0a8;--accent:#b889d6;--accent-dark:#7b4aa3;
+  --text:#17121c;--soft:#6c6273;--border:rgba(0,0,0,.10);--real:#c7f1ff;--fantasy:#ffd1ec;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+.app{max-width:760px;margin:0 auto}
+h1{text-align:center;margin:8px 0 4px;font-size:1.78rem;line-height:1.1}
+.subtitle{text-align:center;color:var(--soft);margin-bottom:16px;font-size:.94rem;line-height:1.35}
+.top-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+button{border:none;border-radius:14px;background:var(--accent);color:#fff;font-size:.96rem;font-weight:bold;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.16);padding:12px 13px}
+button:active{transform:scale(.98)}
+.secondary{background:#fff;color:var(--accent-dark);border:1px solid var(--border);box-shadow:none}
+.card{background:var(--card);border-radius:14px;padding:12px;margin:10px 0;box-shadow:0 3px 8px rgba(0,0,0,.14);border:1px solid var(--border)}
+.card-main{display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:center}
+.label{background:var(--label);padding:10px;border-radius:10px;text-align:center;font-weight:bold;font-size:.86rem;min-height:42px;display:flex;align-items:center;justify-content:center}
+.result{font-weight:bold;color:#403648;font-size:1.05rem;word-break:break-word}
+.result small{display:block;margin-top:4px;color:var(--soft);font-weight:normal;font-size:.78rem;line-height:1.25}
+.source{display:inline-block;margin-top:7px;border-radius:999px;padding:5px 8px;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:900;color:#403648}
+.source.real{background:var(--real)}
+.source.fantasy{background:var(--fantasy)}
+.tools{margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tiny-button{padding:9px 8px;font-size:.82rem;border-radius:10px;box-shadow:none}
+.search-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:#f5eefb;color:var(--accent-dark);border-radius:10px;padding:9px 8px;font-size:.82rem;font-weight:bold;border:1px solid rgba(138,86,181,.18)}
+.lock{display:flex;align-items:center;justify-content:center;gap:6px;background:#f6f4f7;border-radius:10px;font-size:.82rem;color:#554b5d;font-weight:bold;padding:9px 8px;user-select:none}
+.lock input{transform:scale(1.1)}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0 12px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:12px;text-align:center;padding:9px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.stat b{display:block;font-size:1.15rem;color:var(--accent-dark)}
+.stat span{font-size:.75rem;color:var(--soft);font-weight:bold}
+.note{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;color:var(--soft);font-size:.86rem;line-height:1.35;text-align:center}
+.rules{background:#fff;border-radius:14px;padding:12px;margin-top:12px;box-shadow:0 3px 8px rgba(0,0,0,.12);border:1px solid var(--border)}
+.rules b{display:block;margin-bottom:6px;color:#403648}
+.rules ul{margin:6px 0 0;padding-left:20px;color:var(--soft);line-height:1.35;font-size:.86rem}
+.copied{text-align:center;min-height:20px;font-size:.85rem;color:var(--accent-dark);font-weight:bold;margin-top:8px}
+@media(max-width:500px){
+  body{padding:13px}h1{font-size:1.48rem}.top-buttons,.stats{grid-template-columns:1fr}
+  .card-main{grid-template-columns:104px 1fr}.label{font-size:.76rem;padding:9px 7px}.tools{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main class="app">
+<h1>Hybrid Creature Generator</h1>
+<div class="subtitle">Tuimiz-style, maar dan exact 50/50: zes echte dieren en zes fantasy/myth creatures per generatie. Geen image generator, alleen referentie-chaos met nette knopjes. Bijna volwassen gedrag.</div>
+
+<div class="stats">
+  <div class="stat"><b id="realCount">0</b><span>ECHT</span></div>
+  <div class="stat"><b id="fantasyCount">0</b><span>FANTASY</span></div>
+  <div class="stat"><b id="poolCount">0</b><span>POOLS</span></div>
+</div>
+
+<div class="top-buttons">
+  <button onclick="generateAll()">Generate alles 50/50</button>
+  <button class="secondary" onclick="copyCreature()">Kopieer resultaat</button>
+</div>
+
+<div class="note">Per categorie kun je apart rerollen. Lock onderdelen die je wil houden. Reroll behoudt de bron, dus fantasy blijft fantasy en echt blijft echt. Anders stort de balans in, en dan moeten we wéér administratie doen.</div>
+
+<div id="results"></div>
+<div id="rules" class="rules"></div>
+<div class="copied" id="copiedMessage"></div>
+</main>
+
+<script>
+const REAL = ["African elephant", "Asian elephant", "woolly mammoth", "blue whale", "humpback whale", "orca", "narwhal", "beluga whale", "bottlenose dolphin", "manatee", "dugong", "hippopotamus", "rhinoceros", "tapir", "horse", "zebra", "donkey", "camel", "llama", "alpaca", "giraffe", "okapi", "moose", "elk", "red deer", "reindeer", "gazelle", "impala", "bison", "yak", "mountain goat", "ibex", "ram", "wild boar", "warthog", "wolf", "coyote", "fox", "arctic fox", "fennec fox", "bear", "polar bear", "panda", "red panda", "raccoon", "coati", "badger", "wolverine", "otter", "sea otter", "weasel", "ferret", "skunk", "lion", "tiger", "leopard", "snow leopard", "jaguar", "cheetah", "cougar", "lynx", "caracal", "serval", "domestic cat", "sphynx cat", "hyena", "meerkat", "mongoose", "civet", "bat", "flying fox", "hedgehog", "porcupine", "capybara", "beaver", "rat", "mouse", "squirrel", "chipmunk", "rabbit", "hare", "kangaroo", "wallaby", "koala", "wombat", "tasmanian devil", "opossum", "sugar glider", "platypus", "echidna", "sloth", "anteater", "armadillo", "pangolin", "lemur", "aye-aye", "tarsier", "capuchin", "baboon", "mandrill", "gibbon", "orangutan", "gorilla", "chimpanzee", "ostrich", "emu", "cassowary", "kiwi bird", "penguin", "puffin", "albatross", "seagull", "pelican", "heron", "egret", "flamingo", "stork", "crane", "swan", "goose", "duck", "peacock", "turkey", "chicken", "quail", "pheasant", "eagle", "hawk", "falcon", "vulture", "owl", "barn owl", "raven", "crow", "magpie", "jackdaw", "jay", "parrot", "macaw", "cockatoo", "toucan", "hornbill", "kingfisher", "woodpecker", "hummingbird", "swallow", "lyrebird", "bird-of-paradise", "secretary bird", "shoebill", "kookaburra", "crocodile", "alligator", "komodo dragon", "monitor lizard", "iguana", "chameleon", "gecko", "bearded dragon", "skink", "tortoise", "sea turtle", "snapping turtle", "python", "boa constrictor", "cobra", "king cobra", "viper", "rattlesnake", "coral snake", "frog", "tree frog", "poison dart frog", "toad", "salamander", "newt", "axolotl", "great white shark", "hammerhead shark", "whale shark", "manta ray", "stingray", "sawfish", "moray eel", "electric eel", "seahorse", "sea dragon", "lionfish", "clownfish", "pufferfish", "anglerfish", "oarfish", "coelacanth", "barracuda", "tuna", "salmon", "catfish", "mudskipper", "flying fish", "sunfish", "arapaima", "gar", "sturgeon", "betta fish", "koi fish", "octopus", "squid", "cuttlefish", "nautilus", "jellyfish", "sea anemone", "coral", "starfish", "sea urchin", "sea cucumber", "snail", "slug", "clam", "scallop", "lobster", "crab", "hermit crab", "shrimp", "mantis shrimp", "barnacle", "horseshoe crab", "spider", "tarantula", "jumping spider", "scorpion", "whip scorpion", "tick", "mite", "centipede", "millipede", "dragonfly", "butterfly", "moth", "luna moth", "beetle", "stag beetle", "rhinoceros beetle", "ladybug", "firefly", "weevil", "ant", "leafcutter ant", "bee", "bumblebee", "wasp", "hornet", "mantis", "stick insect", "leaf insect", "grasshopper", "cricket", "katydid", "cicada", "cockroach", "termite", "lacewing", "earwig", "silverfish", "flea", "mosquito", "fly", "earthworm", "leech", "velvet worm", "tardigrade", "giant isopod"];
+const FANTASY = ["griffin", "hippogriff", "chimera", "manticore", "sphinx", "pegasus", "unicorn", "basilisk", "cockatrice", "cerberus", "orthrus", "hydra", "gorgon", "medusa", "centaur", "satyr", "faun", "minotaur", "harpy", "siren", "lamia", "empusa", "hippocampus", "triton", "cyclops", "catoblepas", "phoenix", "stymphalian bird", "cetus", "erymanthian boar", "ceryneian hind", "teumessian fox", "laelaps", "dragon", "wyvern", "wyrm", "lindworm", "amphiptere", "drake", "sea serpent", "tarasque", "questing beast", "yale", "leucrota", "bonnacon", "caladrius", "enfield", "peryton", "carbuncle", "vegetable lamb", "monoceros", "bicorn", "al-mi'raj", "shadhavar", "karkadann", "gargoyle", "hellhound", "black shuck", "barghest", "church grim", "gytrash", "spectral hound", "wolpertinger", "jackalope", "tatzelwurm", "kelpie", "each-uisge", "selkie", "puca", "cu sith", "cat sith", "dullahan", "banshee", "redcap", "afanc", "nuckelavee", "fachan", "fuath", "glaistig", "baobhan sith", "bean nighe", "brownie", "boggart", "spriggan", "knocker", "trow", "merrow", "dobhar-chu", "will-o'-the-wisp", "fenrir", "jormungandr", "sleipnir", "nidhogg", "ratatoskr", "garmr", "fylgja", "huldra", "draugr", "troll", "jotunn", "kraken", "hafgufa", "lyngbakr", "mare", "nixie", "nokken", "fossegrim", "skogsrå", "tomte", "gullinbursti", "hræsvelgr", "valravn", "leshy", "rusalka", "vodyanoy", "domovoi", "kikimora", "baba yaga", "zmey gorynych", "zmei", "hala", "vila", "samodiva", "striga", "strigoi", "moroi", "upir", "psoglav", "bannik", "ovinnik", "poludnitsa", "likho", "gamayun", "alkonost", "sirin", "firebird", "bukavac", "kitsune", "tanuki", "kappa", "tengu", "karasu-tengu", "oni", "nue", "baku", "kirin", "shisa", "komainu", "raiju", "yuki-onna", "nure-onna", "jorogumo", "tsuchigumo", "gashadokuro", "rokurokubi", "futakuchi-onna", "akaname", "kodama", "nurikabe", "mokumokuren", "umibozu", "kamaitachi", "bakeneko", "nekomata", "inugami", "mujina", "yamata no orochi", "hitotsume-kozo", "tenome", "mikoshi-nyudo", "namahage", "shachihoko", "kasa-obake", "chochin-obake", "nurarihyon", "onmoraki", "waira", "satori", "kasha", "ushi-oni", "wanyudo", "keukegen", "tsukumogami", "qilin", "long dragon", "fenghuang", "pixiu", "bai ze", "taotie", "hundun", "xiezhi", "zhulong", "huli jing", "nine-tailed fox", "jiangshi", "xuanwu", "white tiger", "vermilion bird", "azure dragon", "black tortoise", "longma", "suanni", "bixie", "baihu", "zhuque", "taowu", "qiongqi", "peng", "kun", "dijiang", "tianlong", "haetae", "imugi", "gumiho", "dokkaebi", "bulgae", "naga", "nagini", "garuda", "makara", "yali", "vyala", "sharabha", "gandaberunda", "airavata", "kinnara", "kimpurusha", "yaksha", "rakshasa", "vetala", "pishacha", "apsara", "asura", "bhuta", "preta", "churel", "vanara", "bakunawa", "sarimanok", "aswang", "manananggal", "tikbalang", "kapre", "duwende", "sigbin", "tiyanak", "wakwak", "berbalang", "penanggalan", "pontianak", "orang minyak", "hantu raya", "krasue", "simurgh", "homa bird", "roc", "rukh", "div", "ifrit", "djinn", "jinn", "ghoul", "marid", "peri", "bahamut", "behemoth", "leviathan", "ziz", "lamassu", "shedu", "anzu", "sirrush", "mushkhushshu", "pazuzu", "utukku", "gallu", "kusarikku", "lahmu", "apkallu", "cherub", "seraph", "ophanim", "re'em", "ammit", "serpopard", "bennu", "uraeus", "set animal", "hieracosphinx", "criosphinx", "quetzalcoatl", "kukulkan", "cipactli", "ahuizotl", "camazotz", "nahual", "cadejo", "alux", "chaneque", "chupacabra", "mapinguari", "curupira", "boitatá", "iara", "caipora", "encantado", "yacumama", "mothman", "jersey devil", "bigfoot", "sasquatch", "yeti", "skunk ape", "flatwoods monster", "loveland frogman", "fresno nightcrawler", "wendigo", "thunderbird", "snallygaster", "hodag", "squonk", "wampus cat", "ozark howler", "hidebehind", "hoop snake", "lizard man", "dover demon", "goatman", "mongolian death worm", "champ", "nessie", "ogopogo", "caddy", "beast of bray road", "anansi", "adze", "impundulu", "inkanyamba", "grootslang", "kongamato", "mokele-mbembe", "tokoloshe", "ninki nanka", "sasabonsam", "aziza", "abada", "kishi", "werehyena", "bunyip", "yowie", "rainbow serpent", "drop bear", "min min light", "taniwha", "mo'o", "menehune", "kupua", "adaro"];
+const CATEGORIES = [{"id": "base", "label": "Base body", "hint": "overall silhouette / torso / body mass"}, {"id": "head", "label": "Head", "hint": "head shape, skull, face proportions"}, {"id": "ears", "label": "Ears / horns", "hint": "ears, horns, antennae, crest, antlers"}, {"id": "eyes", "label": "Eyes", "hint": "eye shape, placement, gaze, lids"}, {"id": "nose", "label": "Nose / snout / beak", "hint": "nose, muzzle, beak, nostrils, profile"}, {"id": "mouth", "label": "Mouth / teeth", "hint": "mouth, jaw, teeth, tongue, bite"}, {"id": "neck", "label": "Neck / mane", "hint": "neck length, ruff, mane, throat, collar"}, {"id": "front", "label": "Front limbs", "hint": "arms, forelegs, wings-as-arms, claws"}, {"id": "back", "label": "Back limbs", "hint": "hind legs, haunches, jumping/standing structure"}, {"id": "feet", "label": "Feet / claws / hooves", "hint": "paws, hooves, talons, pads, toes"}, {"id": "tail", "label": "Tail", "hint": "tail shape, tip, stinger, plume, movement"}, {"id": "coat", "label": "Coat / skin / scales", "hint": "skin texture, scales, fur, feathers, armor"}];
+const PROMPTS = ["Use the real animal for anatomy logic and the fantasy creature for drama.", "Keep the silhouette readable before adding details.", "Make one part elegant and one part disgusting. Nature does this constantly and nobody stops her.", "Repeat one shape language three times: triangles, circles, hooks, or flowing lines.", "Use asymmetry somewhere. Perfect symmetry is how designs become screensavers.", "Let the habitat explain at least two design choices.", "Pick one feature to exaggerate and one feature to keep weirdly subtle.", "Make it look biologically attached, not glued on by a bored goblin.", "Use one reference for structure and one reference for texture.", "Do not make every feature sharp. Soft + monstrous is usually creepier."];
+
+const state = {};
+let currentRules = [];
+
+function randomFrom(array){ return array[Math.floor(Math.random()*array.length)]; }
+function shuffle(array){
+  const copy = [...array];
+  for(let i = copy.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+function slugify(text){ return text.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
+function getCategory(id){ return CATEGORIES.find(c => c.id === id); }
+function sourceList(source){ return source === "real" ? REAL : FANTASY; }
+
+function generateAll(){
+  let lockedReal = 0;
+  let lockedFantasy = 0;
+  const unlocked = [];
+
+  CATEGORIES.forEach(category => {
+    const existing = state[category.id];
+    const checkbox = document.getElementById("lock-" + category.id);
+    const locked = checkbox && checkbox.checked && existing;
+
+    if(locked){
+      if(existing.source === "real") lockedReal++;
+      else lockedFantasy++;
+    } else {
+      unlocked.push(category);
+    }
+  });
+
+  const target = CATEGORIES.length / 2;
+  let sources = [];
+  let needReal = Math.max(0, target - lockedReal);
+  let needFantasy = Math.max(0, target - lockedFantasy);
+
+  for(let i=0; i<needReal && sources.length<unlocked.length; i++) sources.push("real");
+  for(let i=0; i<needFantasy && sources.length<unlocked.length; i++) sources.push("fantasy");
+
+  while(sources.length < unlocked.length){
+    const currentReal = lockedReal + sources.filter(s => s === "real").length;
+    const currentFantasy = lockedFantasy + sources.filter(s => s === "fantasy").length;
+    sources.push(currentReal <= currentFantasy ? "real" : "fantasy");
+  }
+
+  sources = shuffle(sources);
+
+  unlocked.forEach((category, index) => {
+    const source = sources[index];
+    state[category.id] = {
+      source,
+      animal: randomFrom(sourceList(source))
+    };
+  });
+
+  currentRules = shuffle(PROMPTS).slice(0,3);
+  render();
+}
+
+function rerollOne(id){
+  const part = state[id];
+  part.animal = randomFrom(sourceList(part.source));
+  render();
+}
+
+function render(){
+  const results = document.getElementById("results");
+  results.innerHTML = "";
+  let real = 0;
+  let fantasy = 0;
+
+  CATEGORIES.forEach(category => {
+    if(!state[category.id]){
+      state[category.id] = { source:"real", animal:randomFrom(REAL) };
+    }
+
+    const chosen = state[category.id];
+    if(chosen.source === "real") real++;
+    else fantasy++;
+
+    const card = document.createElement("section");
+    card.className = "card";
+
+    const main = document.createElement("div");
+    main.className = "card-main";
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = category.label;
+
+    const result = document.createElement("div");
+    result.className = "result";
+    result.innerHTML = `${chosen.animal}<small>${category.hint}</small><span class="source ${chosen.source}">${chosen.source}</span>`;
+
+    main.appendChild(label);
+    main.appendChild(result);
+
+    const tools = document.createElement("div");
+    tools.className = "tools";
+
+    const reroll = document.createElement("button");
+    reroll.className = "tiny-button secondary";
+    reroll.textContent = "Reroll";
+    reroll.onclick = () => rerollOne(category.id);
+
+    const searchLink = document.createElement("a");
+    searchLink.className = "search-link";
+    searchLink.href = "https://www.google.com/search?tbm=isch&q=" + encodeURIComponent(chosen.animal + " " + category.label + " reference anatomy");
+    searchLink.target = "_blank";
+    searchLink.rel = "noopener";
+    searchLink.textContent = "Zoek ref";
+
+    const lockLabel = document.createElement("label");
+    lockLabel.className = "lock";
+    const lock = document.createElement("input");
+    lock.type = "checkbox";
+    lock.id = "lock-" + category.id;
+    lock.checked = localStorage.getItem("lock-tuimiz-hybrid-" + category.id) === "true";
+    lock.onchange = () => localStorage.setItem("lock-tuimiz-hybrid-" + category.id, lock.checked);
+    const lockText = document.createElement("span");
+    lockText.textContent = "Lock";
+    lockLabel.appendChild(lock);
+    lockLabel.appendChild(lockText);
+
+    tools.appendChild(reroll);
+    tools.appendChild(searchLink);
+    tools.appendChild(lockLabel);
+
+    card.appendChild(main);
+    card.appendChild(tools);
+    results.appendChild(card);
+  });
+
+  document.getElementById("realCount").textContent = real;
+  document.getElementById("fantasyCount").textContent = fantasy;
+  document.getElementById("poolCount").textContent = REAL.length + " + " + FANTASY.length;
+
+  const rules = document.getElementById("rules");
+  rules.innerHTML = "<b>Drawing challenge rules</b><ul>" + currentRules.map(rule => "<li>" + rule + "</li>").join("") + "</ul>";
+}
+
+function copyCreature(){
+  const lines = [];
+  lines.push("Hybrid Creature Generator");
+  lines.push("Balance: " + document.getElementById("realCount").textContent + " real / " + document.getElementById("fantasyCount").textContent + " fantasy");
+  lines.push("");
+
+  CATEGORIES.forEach(category => {
+    const chosen = state[category.id];
+    lines.push(category.label + ": " + chosen.animal + " (" + chosen.source + ") — " + category.hint);
+  });
+
+  lines.push("");
+  lines.push("Drawing challenge rules:");
+  currentRules.forEach(rule => lines.push("- " + rule));
+
+  navigator.clipboard.writeText(lines.join("\n")).then(() => {
+    const message = document.getElementById("copiedMessage");
+    message.textContent = "Gekopieerd. Je monsterlijke boodschappenlijstje leeft nu op je clipboard.";
+    setTimeout(() => message.textContent = "", 2500);
+  }).catch(() => {
+    const message = document.getElementById("copiedMessage");
+    message.textContent = "Kopiëren lukte niet. Browser deed moeilijk, schokkend.";
+    setTimeout(() => message.textContent = "", 3000);
+  });
+}
+
+generateAll();
+</script>
+</body>
+</html>
